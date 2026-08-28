@@ -5,7 +5,10 @@ use ark_serialize::CanonicalSerialize;
 use core::str::FromStr;
 use soroban_sdk::testutils::Address as TestAddress;
 use soroban_sdk::{
-    crypto::bls12_381::{Fr, G1Affine, G2Affine, G1_SERIALIZED_SIZE, G2_SERIALIZED_SIZE},
+    crypto::bls12_381::{
+        Bls12381Fr as Fr, Bls12381G1Affine as G1Affine, Bls12381G2Affine as G2Affine,
+        G1_SERIALIZED_SIZE, G2_SERIALIZED_SIZE,
+    },
     symbol_short, vec, Address, Bytes, BytesN, Env, String, U256,
 };
 
@@ -15,7 +18,7 @@ pub struct MockToken;
 
 #[contractimpl]
 impl MockToken {
-    pub fn initialize(env: &Env, admin: Address, decimal: u32, name: String, symbol: String) {
+    pub fn __constructor(env: &Env, admin: Address, decimal: u32, name: String, symbol: String) {
         env.storage()
             .instance()
             .set(&symbol_short!("admin"), &admin);
@@ -288,15 +291,14 @@ fn setup_test_environment(env: &Env) -> (Address, Address, Address) {
 
     // Deploy mock token
     let token_admin = Address::generate(env);
-    let token_id = env.register(MockToken, ());
-    let token_client = MockTokenClient::new(env, &token_id);
-
-    // Initialize token
-    token_client.initialize(
-        &token_admin,
-        &7u32,
-        &String::from_str(env, "Test Token"),
-        &String::from_str(env, "TEST"),
+    let token_id = env.register(
+        MockToken,
+        (
+            token_admin,
+            7u32,
+            String::from_str(env, "Test Token"),
+            String::from_str(env, "TEST"),
+        ),
     );
 
     // Deploy privacy pools contract
